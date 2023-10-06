@@ -1,0 +1,8 @@
+{
+  "tasks": {
+    "migrateSqlite": "deno run -A sqlite-migration.ts",
+    "getAllMovies": "deno run -A get-all-movies.ts",
+    "updateAllMovies": "deno run -A update-all-movies.ts",
+    "getBestMovies": "deno run -A get-better-rankings.ts"
+  }
+}
