@@ -8,6 +8,9 @@ db.execute(`
     imdbScore REAL,
     audio_quality REAL,
     video_quality REAL,
+    magnet_dubbed TEXT,
+    magnet_subtitled TEXT,
+    magnet_dual_audio TEXT,
     page_url TEXT NOT NULL,
     updated BOOLEAN NOT NULL CHECK (updated IN (FALSE, TRUE)) DEFAULT FALSE,
     UNIQUE(page_url)

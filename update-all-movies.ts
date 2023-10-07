@@ -3,8 +3,10 @@ import {
   initParser
 } from 'https://deno.land/x/deno_dom@v0.1.40/deno-dom-wasm-noinit.ts';
 import { DB } from 'https://deno.land/x/sqlite@v3.8/mod.ts';
+import { extractMagnetLinks } from './get-magnet-links.ts';
 import { fetchMovie } from './util/fetch-movie.ts';
 import { LoadingAnimation } from './util/loading-animation.ts';
+
 function extractNumber(pattern: RegExp, target: string): number {
   const match = target.match(pattern);
 
@@ -30,6 +32,7 @@ const videoQualityPattern = /Qualidade (?:de|do) Vídeo:\s*(\d+(?:,\d+|\.\d+)?)/
 const qualidadeAudioVideo = /Qualidade Áudio e Vídeo:\s*(\d+(?:,\d+|\.\d+)?)/;
 const domParser = new DOMParser();
 const db = new DB('movies.db');
+
 const loadingAnimation = new LoadingAnimation(`update...`);
 
 (async () => {
@@ -50,13 +53,10 @@ const loadingAnimation = new LoadingAnimation(`update...`);
         error.message ===
           'Fetch failed: Maximum number of redirects (20) reached'
       ) {
-        console.log(
-          `Error on fetch movie ${link} ${
-            error instanceof TypeError ? error.message : ''
-          }`
-        );
+        console.log(`Error on fetch movie: ${link} - ${error.message}`);
         continue;
-      } else throw error;
+      }
+      throw error;
     }
 
     // console.log('<here...');
@@ -97,6 +97,21 @@ const loadingAnimation = new LoadingAnimation(`update...`);
         text as string
       );
       audioQuality = videoQuality = audioAndVideoQuality;
+    }
+
+    const magnetLinks = extractMagnetLinks(dom);
+    if (magnetLinks) {
+      const { ptBRlink, enUSlink, doubleAudioLink } = magnetLinks;
+      const query = db.prepareQuery(`
+        UPDATE movies SET
+          magnet_dubbed = ?,
+          magnet_subtitled = ?,
+          magnet_dual_audio = ?
+        WHERE 
+          page_url = ?
+      `);
+      query.execute([ptBRlink, enUSlink, doubleAudioLink, link as string]);
+      query.finalize();
     }
 
     // update all movies fields with the same page_url
